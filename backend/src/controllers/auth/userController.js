@@ -134,3 +134,41 @@ export const logoutUser = asyncHandler(async (req, res) => {
     message: "user logged out",
   });
 });
+
+export const getUser = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select("-password");
+
+  if (user) {
+    res.status(200).json(user);
+  } else {
+    res.status(404);
+    throw new Error("User not found!");
+  }
+});
+
+export const updateUser = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  if (user) {
+    // user propeties to be updated
+    const { name, username, email, bio, photo } = req.body;
+    user.name = req.body.name || user.name;
+    user.username = req.body.username || user.username;
+    user.bio = req.body.bio || user.bio;
+    user.photo = req.body.photo || user.photo;
+
+    const updated = await user.save();
+
+    res.status(200).json({
+      _id: updated._id,
+      name: updated.name,
+      username: updated.username,
+      email: updated.email,
+      bio: updated.bio,
+      photo: updated.photo,
+    });
+  }else {
+    res.status(404);
+    throw new Error("User not found!");
+  }
+});
