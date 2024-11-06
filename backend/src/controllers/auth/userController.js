@@ -1,15 +1,20 @@
 import asyncHandler from "express-async-handler";
 import User from "../../models/auth/UserModel.js";
 import generateToken from "../../helpers/generateToken.js";
-import bcrypt from "bcryptjs";
+import bcrypt from "bcrypt";
 
 export const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, username, email, password } = req.body;
 
-  //validation
-  if (!name || !email || !password) {
+  //validation add username
+  if (!name || !email || !password || !username) {
     res.status(400);
     throw new Error("Please add all fields");
+  }
+
+  if (username.length < 3) {
+    res.status(400);
+    throw new Error("Username should be at least 3 characters");
   }
 
   //check password length
@@ -19,8 +24,7 @@ export const registerUser = asyncHandler(async (req, res) => {
   }
 
   //check if user alerady exists
-  const existingUser = await User.findOne({ email });
-  console.log(existingUser);
+  const existingUser = await User.findOne({ $or: [{ email }, { username }] });
 
   if (existingUser) {
     res.status(400);
@@ -29,6 +33,7 @@ export const registerUser = asyncHandler(async (req, res) => {
 
   const user = await User.create({
     name,
+    username,
     email,
     password,
   });
@@ -44,11 +49,12 @@ export const registerUser = asyncHandler(async (req, res) => {
   });
 
   if (user) {
-    const { _id, name, email, role, photo, bio, isVerified } = user;
+    const { _id, name, username, email, role, photo, bio, isVerified } = user;
 
     res.status(201).json({
       _id,
       name,
+      username,
       email,
       role,
       photo,
@@ -63,17 +69,25 @@ export const registerUser = asyncHandler(async (req, res) => {
 });
 
 export const loginUser = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
+  const { username, email, password } = req.body;
 
-  if (!email || !password) {
+  if ((!email && !username) || !password) {
     res.status(400);
-    throw new Error("Please add email and password");
+    throw new Error("Please add email or username and password");
   }
 
-  const existingUser = await User.findOne({ email });
+  const existingUser = await User.findOne({
+    $or: [{ email }, { username }],
+  }).select("+password");
+
   if (!existingUser) {
     res.status(400);
     throw new Error("User does not exist, sign up!");
+  }
+
+  if (!existingUser.password) {
+    res.status(400);
+    throw new Error("Password hash not found");
   }
 
   const isMatch = await bcrypt.compare(password, existingUser.password);
@@ -86,7 +100,8 @@ export const loginUser = asyncHandler(async (req, res) => {
   const token = generateToken(existingUser._id);
 
   if (existingUser && isMatch) {
-    const { _id, name, email, role, photo, bio, isVerified } = existingUser;
+    const { _id, name, username, email, role, photo, bio, isVerified } =
+      existingUser;
 
     res.cookie("token", token, {
       path: "/",
@@ -99,6 +114,7 @@ export const loginUser = asyncHandler(async (req, res) => {
     res.status(200).json({
       _id,
       name,
+      username,
       email,
       role,
       photo,
@@ -108,6 +124,13 @@ export const loginUser = asyncHandler(async (req, res) => {
     });
   } else {
     res.status(400);
-    throw new Error("Invalid email or password");
+    throw new Error("Invalid email/username or password");
   }
+});
+
+export const logoutUser = asyncHandler(async (req, res) => {
+  res.clearCookie("token");
+  res.status(200).json({
+    message: "user logged out",
+  });
 });

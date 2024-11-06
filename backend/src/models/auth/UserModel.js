@@ -1,10 +1,23 @@
 import mongoose from "mongoose";
+import bcrypt from "bcrypt";
 
 const UserSchema = new mongoose.Schema(
   {
     name: {
       type: String,
       required: [true, "Please add a name"],
+    },
+    username: {
+      type: String,
+      required: [true, "Please add a username"],
+      unique: true,
+      trim: true,
+      minlength: [3, "Username must be longer than 3 characters"],
+      maxlength: [30, "Username cannot exceed 30 characters"],
+      match: [
+        /^[a-zA-Z0-9_-]+$/,
+        "Username can only contain letters, numbers, hyphen, and underscores",
+      ],
     },
     email: {
       type: String,
@@ -47,6 +60,18 @@ const UserSchema = new mongoose.Schema(
   },
   { timestamps: true, minimize: true }
 );
+
+UserSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) {
+    return next();
+  }
+  const salt = await bcrypt.genSalt(10);
+
+  const hashedPassword = await bcrypt.hash(this.password, salt);
+
+  this.password = hashedPassword;
+  next();
+});
 
 const User = mongoose.model("User", UserSchema);
 
