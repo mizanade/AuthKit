@@ -33,3 +33,23 @@ export const protect = asyncHandler(async (req, res, next) => {
     throw new Error("Not authorized,Token Failed");
   }
 });
+
+//admin middleware
+export const adminMiddleware = asyncHandler(async (req, res, next) => {
+  if (req.user && req.user.role === "admin") {
+    next();
+    return;
+  } else {
+    res.status(403).json({ message: "Access denied, only admin can do this" });
+  }
+});
+
+export const creatorMiddleware = asyncHandler(async (req, res, next) => {
+  if ((req.user && req.user.role === "creator") || req.user.role === "admin") {
+    //if not creator, move to the next middleware/controller
+    next();
+    return;
+  }
+  //if not creator, send 403 forbidden --> terminate the request
+  res.status(403).json({ message: "Access denied, only creator can do this" });
+});
