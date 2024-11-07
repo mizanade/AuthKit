@@ -287,3 +287,93 @@ export const verifyUser = asyncHandler(async (req, res) => {
     message: "User verified",
   });
 });
+
+export const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({
+      message: "email is required",
+    });
+  }
+
+  //check if user exist
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    return res.status(404).json({
+      message: "User not found",
+    });
+  }
+
+  let token = await Token.findOne({ userId: user._id });
+
+  if (token) {
+    await token.deleteOne();
+  }
+
+  const passwordResetToken = crypto.randomBytes(32).toString("hex") + user._id;
+
+  const hashedToken = hashToken(passwordResetToken);
+  try {
+    await new Token({
+      userId: user._id,
+      passwordResetToken: hashedToken,
+      createdAt: Date.now(),
+      expiresAt: Date.now() + 60 * 60 * 1000, //60 minutes
+    }).save();
+  } catch (error) {
+    console.error("Error saving reset token:", error);
+    return res.status(500).json({ message: "Could not save reset token" });
+  }
+
+  const resetLink = `${process.env.CLIENT_URL}/reset-password/${passwordResetToken}`;
+
+  //send email to user
+  const subject = "Reset Password - AuthKit";
+  const send_to = user.email;
+  const send_from = process.env.USER_EMAIL;
+  const reply_to = "noreply@gmail.com";
+  const template = "forgotPassword";
+  const name = user.name;
+  const url = resetLink;
+
+  try {
+    await sendEmail(subject, send_to, reply_to, template, send_from, name, url);
+    res.json({ message: "Email sent" });
+  } catch (error) {
+    res.status(500).json({
+      message: "Email could not be sent",
+    });
+  }
+});
+
+export const resetPassword = asyncHandler(async (req, res) => {
+  const { resetPasswordToken } = req.params;
+  const { password } = req.body;
+
+  if (!password) {
+    return res.status(400).json({ message: "Password is required" });
+  }
+
+  //hash the reset token
+  const hashedToken = hashToken(resetPasswordToken);
+
+  const userToken = await Token.findOne({
+    passwordResetToken: hashedToken,
+    expiresAt: { $gt: Date.now() },
+  });
+
+  if (!userToken) {
+    return res.status(400).json({ message: "Invalid or expired token" });
+  }
+
+  const user = await User.findById(userToken.userId);
+
+  user.password = password;
+  await user.save();
+
+  res.status(200).json({
+    message: "Password reset successful",
+  });
+});

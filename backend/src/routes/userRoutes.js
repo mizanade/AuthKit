@@ -8,6 +8,8 @@ import {
   userLoginStatus,
   verifyEmail,
   verifyUser,
+  forgotPassword,
+  resetPassword,
 } from "../controllers/auth/userController.js";
 import {
   adminMiddleware,
@@ -39,5 +41,11 @@ router.get("/login-status", userLoginStatus);
 router.post("/verify-email", protect, verifyEmail);
 
 router.post("/verify-user/:verificationToken", verifyUser);
+
+router.post("/forgot-password", forgotPassword);
+
+router.post("/reset-password/:resetPasswordToken", resetPassword);
+
+router.patch("/change-password", protect);
 
 export default router;

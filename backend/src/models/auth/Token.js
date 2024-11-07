@@ -10,7 +10,7 @@ const TokenSchema = new mongoose.Schema({
     type: String,
     default: "",
   },
-  PasswordResetToken: {
+  passwordResetToken: {
     type: String,
     default: "",
   },
