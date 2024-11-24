@@ -8,8 +8,9 @@ export const protect = asyncHandler(async (req, res, next) => {
 
     //check if token exists
     if (!token) {
-      res.status(401);
-      throw new Error("Not authorized, please login");
+      res.status(401).json({
+        message: "Not authorized, please login",
+      });
     }
 
     //verify token
@@ -52,4 +53,12 @@ export const creatorMiddleware = asyncHandler(async (req, res, next) => {
   }
   //if not creator, send 403 forbidden --> terminate the request
   res.status(403).json({ message: "Access denied, only creator can do this" });
+});
+
+export const verifyMiddleware = asyncHandler(async (req, res, next) => {
+  if (req.user && req.user.isVerified) {
+    next();
+    return;
+  }
+  res.status(403).json({ message: "Please verify your email" });
 });

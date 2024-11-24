@@ -13,27 +13,31 @@ export const registerUser = asyncHandler(async (req, res) => {
 
   //validation add username
   if (!name || !email || !password || !username) {
-    res.status(400);
-    throw new Error("Please add all fields");
+    res.status(400).json({
+      message: "Please add all fields",
+    });
   }
 
   if (username.length < 3) {
-    res.status(400);
-    throw new Error("Username should be at least 3 characters");
+    res.status(400).json({
+      message: "Username should be at least 3 characters",
+    });
   }
 
   //check password length
   if (password.length < 8) {
-    res.status(400);
-    throw new Error("Password should be at least 8 characters");
+    res.status(400).json({
+      message: "Password should be at least 8 characters",
+    });
   }
 
   //check if user alerady exists
   const existingUser = await User.findOne({ $or: [{ email }, { username }] });
 
   if (existingUser) {
-    res.status(400);
-    throw new Error("User already exists");
+    res.status(400).json({
+      message: "User already exists",
+    });
   }
 
   const user = await User.create({
@@ -68,38 +72,43 @@ export const registerUser = asyncHandler(async (req, res) => {
       token,
     });
   } else {
-    res.status(400);
-    throw new Error("Invalid user data");
+    res.status(400).json({
+      message: "Invalid user data",
+    });
   }
 });
 
 export const loginUser = asyncHandler(async (req, res) => {
-  const { username, email, password } = req.body;
+  const { identifier, password } = req.body;
 
-  if ((!email && !username) || !password) {
-    res.status(400);
-    throw new Error("Please add email or username and password");
+  if (!identifier || !password) {
+    res.status(400).json({
+      message: "Please add all fields",
+    });
   }
 
   const existingUser = await User.findOne({
-    $or: [{ email }, { username }],
+    $or: [{ email: identifier }, { username: identifier }],
   }).select("+password");
 
   if (!existingUser) {
-    res.status(400);
-    throw new Error("User does not exist, sign up!");
+    res.status(400).json({
+      message: "User does not exist",
+    });
   }
 
   if (!existingUser.password) {
-    res.status(400);
-    throw new Error("Password hash not found");
+    res.status(400).json({
+      message: "Password not set",
+    });
   }
 
   const isMatch = await bcrypt.compare(password, existingUser.password);
 
   if (!isMatch) {
-    res.status(400);
-    throw new Error("Invalid credentials");
+    res.status(400).json({
+      message: "Invalid email or password",
+    });
   }
 
   const token = generateToken(existingUser._id);
@@ -128,8 +137,9 @@ export const loginUser = asyncHandler(async (req, res) => {
       token,
     });
   } else {
-    res.status(400);
-    throw new Error("Invalid email/username or password");
+    res.status(400).json({
+      message: "Invalid email/username or password",
+    });
   }
 });
 
@@ -146,8 +156,9 @@ export const getUser = asyncHandler(async (req, res) => {
   if (user) {
     res.status(200).json(user);
   } else {
-    res.status(404);
-    throw new Error("User not found!");
+    res.status(404).json({
+      message: "User not found",
+    });
   }
 });
 
@@ -173,8 +184,9 @@ export const updateUser = asyncHandler(async (req, res) => {
       photo: updated.photo,
     });
   } else {
-    res.status(404);
-    throw new Error("User not found!");
+    res.status(404).json({
+      message: "User not found",
+    });
   }
 });
 
