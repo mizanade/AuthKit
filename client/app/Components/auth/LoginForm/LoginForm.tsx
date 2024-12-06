@@ -1,10 +1,10 @@
 "use client";
 
-import { userUserContext } from "@/context/userContext";
+import { useUserContext } from "@/context/userContext";
 import React, { use } from 'react'
 
 function LoginForm() {
-    const { loginUser, userState, handlerUserInput } = userUserContext();
+    const { loginUser, userState, handlerUserInput } = useUserContext();
     const {identifier, password} = userState;
     const [showPassword, setShowPassword] = React.useState(false);
 
@@ -47,7 +47,8 @@ function LoginForm() {
               <button type="submit" disabled={!identifier || !password} onClick={loginUser} className="mt-6 flex-1 w-full py-3 bg-[#2ECC71] font-bold text-white rounded-md hover:bg-[#7263F3] transition-all duration-300">
                   Login Now
               </button>
-          </div>
+                </div>
+                <img src="/flurry.png" alt="" />
         </form>
         </div>
   )

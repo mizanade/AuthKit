@@ -1,10 +1,10 @@
 "use client";
 
-import { userUserContext } from "@/context/userContext";
+import { useUserContext } from "@/context/userContext";
 import React, { use } from 'react'
 
 function RegisterForm() {
-    const { registerUser, userState, handlerUserInput } = userUserContext();
+    const { registerUser, userState, handlerUserInput } = useUserContext();
     const {name, username, email, password} = userState;
     const [showPassword, setShowPassword] = React.useState(false);
 
@@ -47,8 +47,10 @@ function RegisterForm() {
               <button type="submit" disabled={!name || !email || !username || !password} onClick={registerUser} className="mt-6 flex-1 w-full py-3 bg-[#2ECC71] font-bold text-white rounded-md hover:bg-[#7263F3] transition-all duration-300">
                   Register Now
               </button>
-          </div>
-    </form>
+                </div>
+                <img src="/flurry.png" alt="" />
+            </form>
+            
     </div>
   )
 }
